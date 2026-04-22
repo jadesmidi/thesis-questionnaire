@@ -9,15 +9,20 @@ function ordinal(n) {
   return s[n] || `${n+1}e`;
 }
 
-async function saveResponse(data) {
-  const existing = await loadResponses();
-  existing.push({ ...data, id: Date.now(), submittedAt: new Date().toISOString() });
-  await window.storage.set(STORAGE_KEY, JSON.stringify(existing), true);
-}
-async function loadResponses() {
-  try { const r = await window.storage.get(STORAGE_KEY, true); return r ? JSON.parse(r.value) : []; } catch { return []; }
-}
+const SHEET_URL = "https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec";
 
+async function saveResponse(data) {
+  try {
+    await fetch(SHEET_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.error("Failed to save:", error);
+  }
+}
 // ─── Slider ───────────────────────────────────────────────────────────────────
 function ApprovalSlider({ party, value, onChange }) {
   const trackRef = useRef(null);
@@ -326,7 +331,7 @@ export default function App() {
 
             <label style={label}>1. Wat is je leeftijd?</label>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {["18","19","20","21","22","23","24","25","25+","Wil ik niet zeggen"].map(a => (
+              {["<18","18-20","21-25","26-30","31-40","40+","Wil ik niet zeggen"].map(a => (
                 <button key={a} onClick={() => setLeeftijd(a)} style={choiceBtn(leeftijd===a)}>{a}</button>
               ))}
             </div>
