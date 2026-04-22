@@ -503,7 +503,7 @@ export default function App() {
 
             <label style={label}>1. Wat is je leeftijd?</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["18", "19", "20", "21", "22", "23", "24", "25", "25+"].map(a => (
+              {["<18", "18-21", "21-25", "25-30", "30-40", "40+", "Zeg ik liever niet"].map(a => (
                 <button key={a} onClick={() => setLeeftijd(a)} style={{
                   padding: "9px 18px", borderRadius: 8, border: `2px solid ${leeftijd === a ? "#6366f1" : "#e2e4ef"}`,
                   background: leeftijd === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
@@ -514,7 +514,7 @@ export default function App() {
 
             <label style={label}>2. Wat is je academische achtergrond?</label>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {["Middelbare school", "MBO", "HBO", "Bachelor", "Master", "Werkend"].map(a => (
+              {["Middelbare school", "MBO", "HBO", "Bachelor", "Master", "Werkend", "Zeg ik liever niet"].map(a => (
                 <button key={a} onClick={() => setAchtergrond(a)} style={{
                   padding: "10px 16px", borderRadius: 8, border: `2px solid ${achtergrond === a ? "#6366f1" : "#e2e4ef"}`,
                   background: achtergrond === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
@@ -523,8 +523,16 @@ export default function App() {
               ))}
             </div>
 
-            <label style={label}>3. Op welke partij heb je bij de laatste landelijke verkiezing gestemd?</label>
-            <input style={inputStyle} placeholder="Bijv. D66, PVV, VVD..." value={gestemdePartij} onChange={e => setGestemdePartij(e.target.value)} />
+            <label style={label}>2. Op welke partij heb je bij de laatste landelijke verkiezing gestemd?</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {["PVV", "GL=PvdA", "VVD", "NSC", "D66", "BBB", "CDA", "SP", "DENK", "PvdD", "FvD", "SGP", "ChristenUnie", "Volt", "JA21", "BVNL", "BIJ1", "LP", "50PLUS", "Piratenpartij", "FNP", "Vrij Verbond", "DE LINIE", "NL PLAN", "ELLECT", "PvdR", "Vrede voor Dieren", "Ik heb blanco gestemd", "Ik heb niet gestemd", "Zeg ik liever niet", "Anders" ].map(a => (
+                <button key={a} onClick={() => setAchtergrond(a)} style={{
+                  padding: "10px 16px", borderRadius: 8, border: `2px solid ${achtergrond === a ? "#6366f1" : "#e2e4ef"}`,
+                  background: achtergrond === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
+                  color: achtergrond === a ? "white" : "#1a1a2e", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.15s", textAlign: "left"
+                }}>{a}</button>
+              ))}
+            </div>
 
             <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
               <button onClick={() => setPage(0)} style={{ ...btnStyle(false), background: "white", color: "#6366f1", border: "2px solid #6366f1", boxShadow: "none" }}>← Terug</button>
