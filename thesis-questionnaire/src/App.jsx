@@ -305,7 +305,7 @@ export default function App() {
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Hallo! 👋</h2>
             <div style={{ background:"linear-gradient(135deg,#f0f1ff,#f8f0ff)", borderRadius:14, padding:24, marginBottom:24 }}>
               <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:0 }}>
-                Mijn naam is Jade en ik doe voor mijn bachelorthesis <strong>Kunstmatige Intelligentie</strong> onderzoek naar welke coalitie het meest haalbaar is en waar de meeste mensen blij mee zijn, op basis van individuele voorkeuren en rangschikkingen van politieke partijen. Door deel te nemen verzamel ik data om <strong>verschillende methoden en regels</strong> te testen. Jouw deelname helpt mij enorm!
+                Mijn naam is Jade en ik doe voor mijn bachelorthesis <strong>Kunstmatige Intelligentie</strong> onderzoek naar het samenvoegen en liften van individuele voorkeuren en rankschikkingen van politieke partijen tot een coalitie die het meest haalbaar is. Door deel te nemen verzamel ik data om <strong>verschillende methoden en regels</strong> te testen. Jouw deelname helpt mij enorm!
               </p>
               <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:"12px 0 0" }}>⏱️ Deelnemen duurt slechts <strong>ongeveer 5 minuten</strong>.</p>
               <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:"12px 0 0" }}>🔒 <strong>Alle antwoorden blijven volledig anoniem</strong> en worden uitsluitend gebruikt voor mijn bachelorthesis.</p>
