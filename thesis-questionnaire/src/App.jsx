@@ -9,7 +9,7 @@ function ordinal(n) {
   return s[n] || `${n+1}e`;
 }
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyeF0-WyNnI54LXdspP2m0imffhtCZ7gPsgVrVBJTCwgLd7RzDPkF7-2T1AZwEStNo0/exec";
 
 async function saveResponse(data) {
   try {
@@ -360,42 +360,9 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 2 — Party familiarity */}
-        {page === 2 && (
-          <div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Kennis van Partijen</h2>
-            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 3 van 5</p>
-            <p style={{ fontSize:15, lineHeight:1.7, color:"#1a1a2e", marginBottom:24 }}>
-              Voor dit onderzoek gebruik ik de 8 grootste partijen van Nederland. Geef aan welke partijen je kent of van gehoord hebt. Maak je geen zorgen als je een partij niet kent — wees gewoon eerlijk!
-            </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {PARTIES.map(party => {
-                const val = bekendheid[party];
-                return (
-                  <div key={party} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px", borderRadius:10, border:"2px solid #e2e4ef", background:"white" }}>
-                    <span style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:15, color:"#1a1a2e" }}>{party}</span>
-                    <div style={{ display:"flex", gap:8 }}>
-                      <button onClick={() => setBekendheid(b => ({...b,[party]:"ja"}))} style={choiceBtn(val==="ja")}>Ja ✓</button>
-                      <button onClick={() => setBekendheid(b => ({...b,[party]:"nee"}))} style={choiceBtn(val==="nee", true)}>Nee ✗</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {Object.values(bekendheid).includes("nee") && (
-              <div style={{ marginTop:16, background:"#fffbeb", border:"2px solid #fbbf24", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#92400e", fontFamily:"'DM Sans',sans-serif" }}>
-                💡 Geen zorgen! De partijen die je niet kent blijven gewoon in de vragenlijst staan, maar jouw antwoord wordt apart genoteerd.
-              </div>
-            )}
-            <div style={{ display:"flex", gap:12, marginTop:28 }}>
-              <button onClick={() => setPage(1)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
-              <button disabled={!bekendheidComplete} onClick={() => setPage(3)} style={btnStyle(!bekendheidComplete)}>Volgende →</button>
-            </div>
-          </div>
-        )}
 
-        {/* PAGE 3 — Ranking + Approval */}
-        {page === 3 && (
+        {/* PAGE 2 — Ranking + Approval */}
+        {page === 2 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Jouw Voorkeuren</h2>
             <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 4 van 5 · Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.</p>
@@ -417,8 +384,8 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 4 — Coalition Comparisons */}
-        {page === 4 && (
+        {/* PAGE 3 — Coalition Comparisons */}
+        {page === 3 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Coalitie Vergelijkingen</h2>
             <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Op basis van jouw ranking worden de sets hieronder gepersonaliseerd. De nummers (1, 2, 3…) verwijzen naar jouw <strong>{ordinal(0)}, {ordinal(1)}, {ordinal(2)}…</strong> keuze.</p>
@@ -448,8 +415,8 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 5 — Feedback */}
-        {page === 5 && (
+        {/* PAGE 4 — Feedback */}
+        {page === 4 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Vragen of Feedback?</h2>
             <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Heb je vragen, opmerkingen of feedback over het onderzoek? Laat het hieronder weten! Dit is volledig optioneel.</p>
@@ -462,8 +429,8 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 6 — Done */}
-        {page === 6 && (
+        {/* PAGE 5 — Done */}
+        {page === 5 && (
           <div style={{ textAlign:"center", padding:"20px 0" }}>
             <div style={{ fontSize:56, marginBottom:16 }}>🎓</div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1a1a2e" }}>Bedankt!</h2>
