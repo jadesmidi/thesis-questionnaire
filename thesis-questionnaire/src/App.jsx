@@ -1,232 +1,121 @@
 import { useState, useEffect, useRef } from "react";
 
 const PARTIES = ["D66", "PVV", "VVD", "GroenLinks", "PvdA", "CDA", "JA21", "FvD"];
-
+const NL_VOTE_OPTIONS = ["D66","PVV","VVD","GroenLinks-PvdA","CDA","JA21","FvD","BBB","SP","ChristenUnie","SGP","Volt","DENK","Partij voor de Dieren","50PLUS","Niet gestemd","Blanco","Wil ik niet zeggen","Anders"];
 const STORAGE_KEY = "thesis_responses";
-const ADMIN_KEY = "admin_view_thesis";
-
-// ─── Utility ────────────────────────────────────────────────────────────────
 
 function ordinal(n) {
-  const s = ["1e", "2e", "3e", "4e", "5e", "6e", "7e", "8e"];
-  return s[n] || `${n + 1}e`;
+  const s = ["1e","2e","3e","4e","5e","6e","7e","8e"];
+  return s[n] || `${n+1}e`;
 }
-
-function buildCoalitionLabel(indices, ranking) {
-  return indices.map((i) => ranking[i] || `Partij ${i + 1}`).join(", ");
-}
-
-// ─── Storage helpers ─────────────────────────────────────────────────────────
-
-const SHEET_URL = "https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec";
 
 async function saveResponse(data) {
-  await fetch(SHEET_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+  const existing = await loadResponses();
+  existing.push({ ...data, id: Date.now(), submittedAt: new Date().toISOString() });
+  await window.storage.set(STORAGE_KEY, JSON.stringify(existing), true);
 }
 async function loadResponses() {
-  try {
-    const r = await window.storage.get(STORAGE_KEY, true);
-    return r ? JSON.parse(r.value) : [];
-  } catch {
-    return [];
-  }
+  try { const r = await window.storage.get(STORAGE_KEY, true); return r ? JSON.parse(r.value) : []; } catch { return []; }
 }
 
-// ─── Slider Component ─────────────────────────────────────────────────────────
-
+// ─── Slider ───────────────────────────────────────────────────────────────────
 function ApprovalSlider({ party, value, onChange }) {
   const trackRef = useRef(null);
   const isDragging = useRef(false);
-
   const pct = ((value + 5) / 10) * 100;
-
-  const getValueFromEvent = (e) => {
+  const getVal = (e) => {
     const rect = trackRef.current.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return Math.round(ratio * 10 - 5);
+    return Math.round(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * 10 - 5);
   };
-
-  const onStart = (e) => {
-    isDragging.current = true;
-    onChange(getValueFromEvent(e));
-  };
-  const onMove = (e) => {
-    if (!isDragging.current) return;
-    onChange(getValueFromEvent(e));
-  };
+  const onStart = (e) => { isDragging.current = true; onChange(getVal(e)); };
+  const onMove = (e) => { if (isDragging.current) onChange(getVal(e)); };
   const onEnd = () => { isDragging.current = false; };
-
   useEffect(() => {
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onMove);
-    window.addEventListener("touchend", onEnd);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
-    };
+    window.addEventListener("mousemove", onMove); window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onMove); window.addEventListener("touchend", onEnd);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onEnd); window.removeEventListener("touchmove", onMove); window.removeEventListener("touchend", onEnd); };
   });
-
-  const color = value < 0 ? `hsl(${10 + (value + 5) * 8}, 80%, 55%)` : value > 0 ? `hsl(${140 + value * 4}, 70%, 45%)` : "#8b8fa8";
-
+  const color = value < 0 ? `hsl(${10+(value+5)*8},80%,55%)` : value > 0 ? `hsl(${140+value*4},70%,45%)` : "#8b8fa8";
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: "#1a1a2e" }}>{party}</span>
-        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, fontWeight: 700, color, minWidth: 32, textAlign: "right" }}>
-          {value > 0 ? `+${value}` : value}
-        </span>
+    <div style={{ marginBottom:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+        <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:15, fontWeight:600, color:"#1a1a2e" }}>{party}</span>
+        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:14, fontWeight:700, color, minWidth:32, textAlign:"right" }}>{value > 0 ? `+${value}` : value}</span>
       </div>
-      <div style={{ position: "relative", height: 36, display: "flex", alignItems: "center", cursor: "pointer" }}
-        ref={trackRef} onMouseDown={onStart} onTouchStart={onStart}>
-        <div style={{ position: "absolute", left: 0, right: 0, height: 6, borderRadius: 3, background: "#e2e4ef" }} />
-        <div style={{ position: "absolute", left: "50%", width: 2, height: 14, background: "#c5c7d8", borderRadius: 1, transform: "translateX(-50%)" }} />
-        <div style={{
-          position: "absolute", height: 6, borderRadius: 3,
-          background: `linear-gradient(90deg, ${color}, ${color}cc)`,
-          left: value >= 0 ? "50%" : `${pct}%`,
-          width: Math.abs(value / 10 * 100) + "%",
-          transition: "background 0.2s"
-        }} />
-        <div style={{
-          position: "absolute", left: `${pct}%`, transform: "translateX(-50%)",
-          width: 22, height: 22, borderRadius: "50%",
-          background: color, border: "3px solid white",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-          cursor: "grab", transition: "background 0.2s, transform 0.1s",
-          zIndex: 2
-        }} />
-        <div style={{ position: "absolute", left: 0, bottom: -18, fontSize: 11, color: "#8b8fa8", fontFamily: "'DM Mono', monospace" }}>−5</div>
-        <div style={{ position: "absolute", right: 0, bottom: -18, fontSize: 11, color: "#8b8fa8", fontFamily: "'DM Mono', monospace" }}>+5</div>
-        <div style={{ position: "absolute", left: "50%", bottom: -18, fontSize: 11, color: "#8b8fa8", fontFamily: "'DM Mono', monospace", transform: "translateX(-50%)" }}>0</div>
+      <div style={{ position:"relative", height:36, display:"flex", alignItems:"center", cursor:"pointer" }} ref={trackRef} onMouseDown={onStart} onTouchStart={onStart}>
+        <div style={{ position:"absolute", left:0, right:0, height:6, borderRadius:3, background:"#e2e4ef" }} />
+        <div style={{ position:"absolute", left:"50%", width:2, height:14, background:"#c5c7d8", borderRadius:1, transform:"translateX(-50%)" }} />
+        <div style={{ position:"absolute", height:6, borderRadius:3, background:`linear-gradient(90deg,${color},${color}cc)`, left:value>=0?"50%":`${pct}%`, width:Math.abs(value/10*100)+"%", transition:"background 0.2s" }} />
+        <div style={{ position:"absolute", left:`${pct}%`, transform:"translateX(-50%)", width:22, height:22, borderRadius:"50%", background:color, border:"3px solid white", boxShadow:"0 2px 8px rgba(0,0,0,0.25)", cursor:"grab", zIndex:2 }} />
+        <div style={{ position:"absolute", left:0, bottom:-18, fontSize:11, color:"#8b8fa8", fontFamily:"'DM Mono',monospace" }}>−5</div>
+        <div style={{ position:"absolute", right:0, bottom:-18, fontSize:11, color:"#8b8fa8", fontFamily:"'DM Mono',monospace" }}>+5</div>
+        <div style={{ position:"absolute", left:"50%", bottom:-18, fontSize:11, color:"#8b8fa8", fontFamily:"'DM Mono',monospace", transform:"translateX(-50%)" }}>0</div>
       </div>
     </div>
   );
 }
 
-// ─── Ranking Component (pool → ranked list) ──────────────────────────────────
-
+// ─── Ranking ──────────────────────────────────────────────────────────────────
 function RankingList({ ranking, setRanking, pool, setPool }) {
-  // ranking = ordered list of chosen parties; pool = unchosen parties
-  const [dragSrc, setDragSrc] = useState(null); // {from: "pool"|"ranked", index: number}
+  const [dragSrc, setDragSrc] = useState(null);
   const [overRanked, setOverRanked] = useState(null);
-
-  const addToRanking = (party) => {
-    setPool(p => p.filter(x => x !== party));
-    setRanking(r => [...r, party]);
-  };
-
-  const removeFromRanking = (i) => {
-    const party = ranking[i];
-    setRanking(r => r.filter((_, idx) => idx !== i));
-    setPool(p => [...p, party]);
-  };
-
-  const onDragStartRanked = (e, i) => { setDragSrc({ from: "ranked", index: i }); };
+  const addToRanking = (party) => { setPool(p => p.filter(x => x !== party)); setRanking(r => [...r, party]); };
+  const removeFromRanking = (i) => { const p = ranking[i]; setRanking(r => r.filter((_,j) => j !== i)); setPool(p2 => [...p2, p]); };
+  const onDragStartRanked = (e, i) => setDragSrc({ from:"ranked", index:i });
   const onDragOverRanked = (e, i) => { e.preventDefault(); setOverRanked(i); };
   const onDropRanked = (i) => {
     if (!dragSrc) return;
-    if (dragSrc.from === "ranked") {
-      const next = [...ranking];
-      const [item] = next.splice(dragSrc.index, 1);
-      next.splice(i, 0, item);
-      setRanking(next);
-    }
+    if (dragSrc.from === "ranked") { const next=[...ranking]; const [item]=next.splice(dragSrc.index,1); next.splice(i,0,item); setRanking(next); }
     setDragSrc(null); setOverRanked(null);
   };
-  const onDragEnd = () => { setDragSrc(null); setOverRanked(null); };
-
   return (
-    <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-      {/* Pool */}
-      <div style={{ flex: "1 1 180px" }}>
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: "#8b8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-          Beschikbare partijen
-        </p>
-        <div style={{ minHeight: 60, background: "#f4f5fb", borderRadius: 10, padding: 8 }}>
+    <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+      <div style={{ flex:"1 1 180px" }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, color:"#8b8fa8", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Beschikbare partijen</p>
+        <div style={{ minHeight:60, background:"#f4f5fb", borderRadius:10, padding:8 }}>
           {pool.length === 0
-            ? <p style={{ fontSize: 13, color: "#b0b3c8", fontFamily: "'DM Sans', sans-serif", textAlign: "center", padding: "12px 0" }}>Alle partijen gerangschikt ✓</p>
+            ? <p style={{ fontSize:13, color:"#b0b3c8", fontFamily:"'DM Sans',sans-serif", textAlign:"center", padding:"12px 0" }}>Alle partijen gerangschikt ✓</p>
             : pool.map(party => (
               <div key={party} onClick={() => addToRanking(party)}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 14px", marginBottom: 6, borderRadius: 8,
-                  background: "white", border: "2px solid #e2e4ef",
-                  cursor: "pointer", transition: "all 0.15s",
-                  fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#1a1a2e",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.background = "#f0f1ff"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4ef"; e.currentTarget.style.background = "white"; }}>
-                {party}
-                <span style={{ fontSize: 16, color: "#6366f1" }}>+</span>
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", marginBottom:6, borderRadius:8, background:"white", border:"2px solid #e2e4ef", cursor:"pointer", transition:"all 0.15s", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:14, color:"#1a1a2e", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor="#6366f1"; e.currentTarget.style.background="#f0f1ff"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor="#e2e4ef"; e.currentTarget.style.background="white"; }}>
+                {party}<span style={{ fontSize:16, color:"#6366f1" }}>+</span>
               </div>
-            ))
-          }
+            ))}
         </div>
       </div>
-
-      {/* Ranked list */}
-      <div style={{ flex: "1 1 220px" }}>
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-          Jouw ranking ({ranking.length}/{PARTIES.length})
-        </p>
-        <div style={{ minHeight: 60, background: "#f0f1ff", borderRadius: 10, padding: 8 }}>
+      <div style={{ flex:"1 1 220px" }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, color:"#6366f1", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Jouw ranking ({ranking.length}/{PARTIES.length})</p>
+        <div style={{ minHeight:60, background:"#f0f1ff", borderRadius:10, padding:8 }}>
           {ranking.length === 0
-            ? <p style={{ fontSize: 13, color: "#b0b3c8", fontFamily: "'DM Sans', sans-serif", textAlign: "center", padding: "12px 0" }}>Klik op een partij om te beginnen</p>
+            ? <p style={{ fontSize:13, color:"#b0b3c8", fontFamily:"'DM Sans',sans-serif", textAlign:"center", padding:"12px 0" }}>Klik op een partij om te beginnen</p>
             : ranking.map((party, i) => (
               <div key={party} draggable
-                onDragStart={(e) => onDragStartRanked(e, i)}
-                onDragOver={(e) => onDragOverRanked(e, i)}
-                onDrop={() => onDropRanked(i)}
-                onDragEnd={onDragEnd}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px", marginBottom: 6, borderRadius: 8,
-                  background: overRanked === i ? "#e0e1ff" : "white",
-                  border: `2px solid ${overRanked === i ? "#6366f1" : "#c7c9f0"}`,
-                  cursor: "grab", transition: "all 0.15s",
-                  boxShadow: "0 1px 4px rgba(99,102,241,0.1)"
-                }}>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#6366f1", fontWeight: 700, minWidth: 20 }}>{i + 1}</span>
-                <span style={{ fontSize: 14 }}>⠿</span>
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#1a1a2e", flex: 1 }}>{party}</span>
-                <button onClick={() => removeFromRanking(i)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#c0c3d8", fontSize: 16, padding: "0 2px", lineHeight: 1 }}
-                  title="Verwijder uit ranking">×</button>
+                onDragStart={e => onDragStartRanked(e, i)} onDragOver={e => onDragOverRanked(e, i)} onDrop={() => onDropRanked(i)} onDragEnd={() => { setDragSrc(null); setOverRanked(null); }}
+                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", marginBottom:6, borderRadius:8, background:overRanked===i?"#e0e1ff":"white", border:`2px solid ${overRanked===i?"#6366f1":"#c7c9f0"}`, cursor:"grab", transition:"all 0.15s", boxShadow:"0 1px 4px rgba(99,102,241,0.1)" }}>
+                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:12, color:"#6366f1", fontWeight:700, minWidth:20 }}>{i+1}</span>
+                <span style={{ fontSize:14 }}>⠿</span>
+                <span style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:14, color:"#1a1a2e", flex:1 }}>{party}</span>
+                <button onClick={() => removeFromRanking(i)} style={{ background:"none", border:"none", cursor:"pointer", color:"#c0c3d8", fontSize:16, padding:"0 2px" }}>×</button>
               </div>
-            ))
-          }
+            ))}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Coalition Choice ────────────────────────────────────────────────────────
-
+// ─── Coalition Choice ─────────────────────────────────────────────────────────
 function CoalitionChoice({ question, optionA, optionB, value, onChange }) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <p style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 15, color: "#1a1a2e", marginBottom: 12 }}>{question}</p>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+    <div style={{ marginBottom:32 }}>
+      <p style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:15, color:"#1a1a2e", marginBottom:12 }}>{question}</p>
+      <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
         {[optionA, optionB].map((opt, idx) => (
-          <button key={idx} onClick={() => onChange(idx === 0 ? "A" : "B")}
-            style={{
-              padding: "14px 22px", borderRadius: 10, border: `2px solid ${value === (idx === 0 ? "A" : "B") ? "#6366f1" : "#dde0ef"}`,
-              background: value === (idx === 0 ? "A" : "B") ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
-              color: value === (idx === 0 ? "A" : "B") ? "white" : "#1a1a2e",
-              fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
-              cursor: "pointer", transition: "all 0.2s", boxShadow: value === (idx === 0 ? "A" : "B") ? "0 4px 16px rgba(99,102,241,0.3)" : "none"
-            }}>
+          <button key={idx} onClick={() => onChange(idx===0?"A":"B")}
+            style={{ padding:"14px 22px", borderRadius:10, border:`2px solid ${value===(idx===0?"A":"B")?"#6366f1":"#dde0ef"}`, background:value===(idx===0?"A":"B")?"linear-gradient(135deg,#6366f1,#818cf8)":"white", color:value===(idx===0?"A":"B")?"white":"#1a1a2e", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.2s", boxShadow:value===(idx===0?"A":"B")?"0 4px 16px rgba(99,102,241,0.3)":"none" }}>
             {opt}
           </button>
         ))}
@@ -236,260 +125,194 @@ function CoalitionChoice({ question, optionA, optionB, value, onChange }) {
 }
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
-
 function ProgressBar({ step, total }) {
   return (
-    <div style={{ width: "100%", height: 4, background: "#e2e4ef", borderRadius: 2, marginBottom: 32 }}>
-      <div style={{ height: "100%", width: `${(step / total) * 100}%`, background: "linear-gradient(90deg, #6366f1, #a78bfa)", borderRadius: 2, transition: "width 0.4s ease" }} />
+    <div style={{ width:"100%", height:4, background:"#e2e4ef", borderRadius:2, marginBottom:32 }}>
+      <div style={{ height:"100%", width:`${(step/total)*100}%`, background:"linear-gradient(90deg,#6366f1,#a78bfa)", borderRadius:2, transition:"width 0.4s ease" }} />
     </div>
   );
 }
 
 // ─── Admin View ───────────────────────────────────────────────────────────────
-
 function AdminView({ onBack }) {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-
-  useEffect(() => {
-    loadResponses().then(r => { setResponses(r); setLoading(false); });
-  }, []);
-
+  useEffect(() => { loadResponses().then(r => { setResponses(r); setLoading(false); }); }, []);
   const downloadCSV = () => {
     if (!responses.length) return;
-    const cols = ["id", "submittedAt", "leeftijd", "achtergrond", "gestemdePartij",
-      "ranking", "approvals",
-      "coal_1", "coal_2", "coal_3", "coal_4", "coal_5", "feedback"];
-    const rows = responses.map(r => cols.map(c => {
-      const v = r[c];
-      if (typeof v === "object") return JSON.stringify(v);
-      return `"${String(v || "").replace(/"/g, '""')}"`;
-    }).join(","));
+    const cols = ["id","submittedAt","leeftijd","achtergrond","gestemdePartij","gestemdePartijAnders","bekendheid","ranking","approvals","coal_attention","coal_1","coal_2","coal_3","coal_4","coal_A","coal_B","coal_5","coal_C","feedback"];
+    const rows = responses.map(r => cols.map(c => { const v=r[c]; if(typeof v==="object") return JSON.stringify(v); return `"${String(v||"").replace(/"/g,'""')}"`; }).join(","));
     const csv = [cols.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob([csv], { type:"text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "thesis_responses.csv"; a.click();
+    const a = document.createElement("a"); a.href=url; a.download="thesis_responses_nl.csv"; a.click();
   };
-
-  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#6366f1" }}>Laden...</div>;
-
+  if (loading) return <div style={{ padding:40, textAlign:"center", color:"#6366f1" }}>Laden...</div>;
   return (
-    <div style={{ minHeight: "100vh", background: "#f4f5fb", padding: "40px 20px" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <div style={{ minHeight:"100vh", background:"#f4f5fb", padding:"40px 20px" }}>
+      <div style={{ maxWidth:900, margin:"0 auto" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
           <div>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, color: "#1a1a2e", margin: 0 }}>📊 Responses</h1>
-            <p style={{ color: "#8b8fa8", margin: "4px 0 0", fontFamily: "'DM Sans', sans-serif" }}>{responses.length} inzendingen</p>
+            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1a1a2e", margin:0 }}>📊 Responses (NL)</h1>
+            <p style={{ color:"#8b8fa8", margin:"4px 0 0", fontFamily:"'DM Sans',sans-serif" }}>{responses.length} inzendingen</p>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={downloadCSV} style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#6366f1", color: "white", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer" }}>⬇ Download CSV</button>
-            <button onClick={onBack} style={{ padding: "10px 20px", borderRadius: 8, border: "2px solid #dde0ef", background: "white", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", color: "#1a1a2e" }}>← Terug</button>
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={downloadCSV} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:"#6366f1", color:"white", fontFamily:"'DM Sans',sans-serif", fontWeight:600, cursor:"pointer" }}>⬇ Download CSV</button>
+            <button onClick={onBack} style={{ padding:"10px 20px", borderRadius:8, border:"2px solid #dde0ef", background:"white", fontFamily:"'DM Sans',sans-serif", fontWeight:600, cursor:"pointer", color:"#1a1a2e" }}>← Terug</button>
           </div>
         </div>
-
-        {responses.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60, background: "white", borderRadius: 16, color: "#8b8fa8", fontFamily: "'DM Sans', sans-serif" }}>Nog geen inzendingen.</div>
-        ) : (
-          responses.map((r, i) => (
-            <div key={r.id} onClick={() => setSelected(selected === i ? null : i)}
-              style={{ background: "white", borderRadius: 12, padding: 20, marginBottom: 12, cursor: "pointer", border: "2px solid", borderColor: selected === i ? "#6366f1" : "transparent", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#1a1a2e" }}>Respondent #{i + 1}</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#8b8fa8" }}>{new Date(r.submittedAt).toLocaleString("nl-NL")}</span>
+        {responses.length === 0
+          ? <div style={{ textAlign:"center", padding:60, background:"white", borderRadius:16, color:"#8b8fa8", fontFamily:"'DM Sans',sans-serif" }}>Nog geen inzendingen.</div>
+          : responses.map((r, i) => (
+            <div key={r.id} onClick={() => setSelected(selected===i?null:i)}
+              style={{ background:"white", borderRadius:12, padding:20, marginBottom:12, cursor:"pointer", border:"2px solid", borderColor:selected===i?"#6366f1":"transparent", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:700, color:"#1a1a2e" }}>Respondent #{i+1}</span>
+                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:12, color:"#8b8fa8" }}>{new Date(r.submittedAt).toLocaleString("nl-NL")}</span>
               </div>
-              <div style={{ marginTop: 4, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#6366f1" }}>
-                {r.leeftijd} jaar · {r.achtergrond} · Stemde: {r.gestemdePartij}
+              <div style={{ marginTop:4, fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#6366f1" }}>
+                {r.leeftijd} jaar · {r.achtergrond} · Stemde: {r.gestemdePartij}{r.gestemdePartijAnders?` (${r.gestemdePartijAnders})`:""}
               </div>
-              {selected === i && (
-                <div style={{ marginTop: 16, borderTop: "1px solid #eee", paddingTop: 16 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {selected===i && (
+                <div style={{ marginTop:16, borderTop:"1px solid #eee", paddingTop:16 }}>
+                  <div style={{ marginBottom:12 }}>
+                    <strong style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#8b8fa8" }}>BEKENDHEID</strong>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:6 }}>
+                      {Object.entries(r.bekendheid||{}).map(([p,v]) => (
+                        <span key={p} style={{ padding:"3px 10px", borderRadius:20, fontSize:12, fontFamily:"'DM Sans',sans-serif", fontWeight:600, background:v==="ja"?"#dcfce7":"#fee2e2", color:v==="ja"?"#16a34a":"#dc2626" }}>{p}: {v}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                     <div>
-                      <strong style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#8b8fa8" }}>RANKING</strong>
-                      <ol style={{ margin: "8px 0 0", paddingLeft: 20, fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
-                        {(r.ranking || []).map((p, j) => <li key={j}>{p}</li>)}
+                      <strong style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#8b8fa8" }}>RANKING</strong>
+                      <ol style={{ margin:"8px 0 0", paddingLeft:20, fontFamily:"'DM Sans',sans-serif", fontSize:14 }}>
+                        {(r.ranking||[]).map((p,j) => <li key={j}>{p}</li>)}
                       </ol>
                     </div>
                     <div>
-                      <strong style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#8b8fa8" }}>APPROVALS</strong>
-                      <div style={{ marginTop: 8 }}>
-                        {Object.entries(r.approvals || {}).map(([p, v]) => (
-                          <div key={p} style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                            <span>{p}</span><span style={{ color: v > 0 ? "#16a34a" : v < 0 ? "#dc2626" : "#8b8fa8" }}>{v > 0 ? `+${v}` : v}</span>
+                      <strong style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#8b8fa8" }}>APPROVALS</strong>
+                      <div style={{ marginTop:8 }}>
+                        {Object.entries(r.approvals||{}).map(([p,v]) => (
+                          <div key={p} style={{ fontFamily:"'DM Mono',monospace", fontSize:13, display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                            <span>{p}</span><span style={{ color:v>0?"#16a34a":v<0?"#dc2626":"#8b8fa8" }}>{v>0?`+${v}`:v}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-                  <div style={{ marginTop: 16 }}>
-                    <strong style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#8b8fa8" }}>COALITIE KEUZES</strong>
-                    {[
-                      ["V0: {1,2} vs {3,4}", "coal_attention"],
-                      ["V1: {1} vs {2,3,4}", "coal_1"],
-                      ["V2: {1,2,3} vs {1,2}", "coal_2"],
-                      ["V3: {1,8} vs {4,5}", "coal_3"],
-                      ["V4: {1,3,8} vs {3,4,5}", "coal_4"],
-                      ["V5: {1,3} vs {2,4}", "coal_A"],
-                      ["V6: {1,3,5} vs {2,4,5}", "coal_B"],
-                      ["V7: invloed A", "coal_5"],
-                      ["V8: invloed B", "coal_C"],
-                    ].map(([label, key]) => (
-                      <div key={key} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, marginTop: 6 }}>
-                        <span style={{ color: "#8b8fa8" }}>{label}:</span> {r[key] || "—"}
+                  <div style={{ marginTop:16 }}>
+                    <strong style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#8b8fa8" }}>COALITIE KEUZES</strong>
+                    {[["V0: {1,2} vs {3,4}","coal_attention"],["V1: {1} vs {2,3,4}","coal_1"],["V2: {1,2,3} vs {1,2}","coal_2"],["V3: {1,8} vs {4,5}","coal_3"],["V4: {1,3,8} vs {3,4,5}","coal_4"],["V5: {1,3} vs {2}","coal_A"],["V6: {1,3,5} vs {2,4,5}","coal_B"],["V7: invloed A","coal_5"],["V8: invloed B","coal_C"]].map(([lbl,key]) => (
+                      <div key={key} style={{ fontFamily:"'DM Sans',sans-serif", fontSize:14, marginTop:6 }}>
+                        <span style={{ color:"#8b8fa8" }}>{lbl}:</span> {r[key]||"—"}
                       </div>
                     ))}
                   </div>
-                  {r.feedback && (
-                    <div style={{ marginTop: 16, background: "#f4f5fb", borderRadius: 8, padding: 12 }}>
-                      <strong style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#8b8fa8" }}>FEEDBACK</strong>
-                      <p style={{ margin: "6px 0 0", fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1a1a2e" }}>{r.feedback}</p>
-                    </div>
-                  )}
+                  {r.feedback && <div style={{ marginTop:16, background:"#f4f5fb", borderRadius:8, padding:12 }}>
+                    <strong style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"#8b8fa8" }}>FEEDBACK</strong>
+                    <p style={{ margin:"6px 0 0", fontFamily:"'DM Sans',sans-serif", fontSize:14 }}>{r.feedback}</p>
+                  </div>}
                 </div>
               )}
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );
 }
 
 // ─── Main App ────────────────────────────────────────────────────────────────
-
 export default function App() {
-  const [page, setPage] = useState(0); // 0=personal, 1=consent, 2=ranking+approval, 3=coalition, 4=feedback, 5=done
+  const [page, setPage] = useState(0);
   const [adminMode, setAdminMode] = useState(false);
   const [adminInput, setAdminInput] = useState("");
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form data
   const [leeftijd, setLeeftijd] = useState("");
   const [achtergrond, setAchtergrond] = useState("");
   const [gestemdePartij, setGestemdePartij] = useState("");
+  const [gestemdePartijAnders, setGestemdePartijAnders] = useState("");
+  const [stemToelichting, setStemToelichting] = useState("");
   const [consented, setConsented] = useState(false);
+  const [bekendheid, setBekendheid] = useState({});
   const [ranking, setRanking] = useState([]);
   const [pool, setPool] = useState([...PARTIES]);
   const [approvals, setApprovals] = useState(Object.fromEntries(PARTIES.map(p => [p, 0])));
-  const [coal0, setCoal0] = useState("");  // attention check: {1,2} vs {3,4}
-  const [coal1, setCoal1] = useState("");  // {1} vs {2,3,4}
-  const [coal2, setCoal2] = useState("");  // {1,2,3} vs {1,2}  (old Q1 — monotonicity)
-  const [coal3, setCoal3] = useState("");  // {1,8} vs {4,5}   (old Q2)
-  const [coal4, setCoal4] = useState("");  // {1,3,8} vs {3,4,5} (old Q3)
-  const [coalA, setCoalA] = useState("");  // {1,3} vs {2,4}
-  const [coalB, setCoalB] = useState("");  // {1,3,5} vs {2,4,5}
-  const [coal5, setCoal5] = useState("");  // influence Q4
-  const [coalC, setCoalC] = useState("");  // influence Q5
+  const [coal0, setCoal0] = useState("");
+  const [coal1, setCoal1] = useState("");
+  const [coal2, setCoal2] = useState("");
+  const [coal3, setCoal3] = useState("");
+  const [coal4, setCoal4] = useState("");
+  const [coalA, setCoalA] = useState("");
+  const [coalB, setCoalB] = useState("");
+  const [coal5, setCoal5] = useState("");
+  const [coalC, setCoalC] = useState("");
   const [feedback, setFeedback] = useState("");
 
-  const r = ranking; // shorthand
+  const r = ranking;
 
   const handleSubmit = async () => {
     setSaving(true);
-    await saveResponse({
-      leeftijd, achtergrond, gestemdePartij,
-      ranking, approvals,
-      coal_attention: coal0,
-      coal_1: coal1, coal_2: coal2, coal_3: coal3, coal_4: coal4,
-      coal_A: coalA, coal_B: coalB,
-      coal_5: coal5, coal_C: coalC,
-      feedback
-    });
+    await saveResponse({ leeftijd, achtergrond, gestemdePartij, gestemdePartijAnders, stemToelichting, bekendheid, ranking, approvals, coal_attention:coal0, coal_1:coal1, coal_2:coal2, coal_3:coal3, coal_4:coal4, coal_A:coalA, coal_B:coalB, coal_5:coal5, coal_C:coalC, feedback });
     setSaving(false);
-    setPage(5);
+    setPage(6);
   };
 
-  const btnStyle = (disabled) => ({
-    padding: "14px 32px", borderRadius: 10, border: "none",
-    background: disabled ? "#dde0ef" : "linear-gradient(135deg, #6366f1, #818cf8)",
-    color: disabled ? "#a0a3b8" : "white",
-    fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15,
-    cursor: disabled ? "not-allowed" : "pointer",
-    boxShadow: disabled ? "none" : "0 4px 16px rgba(99,102,241,0.3)",
-    transition: "all 0.2s"
-  });
-
-  const inputStyle = {
-    padding: "12px 16px", borderRadius: 8, border: "2px solid #e2e4ef",
-    fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1a1a2e",
-    background: "white", width: "100%", outline: "none", boxSizing: "border-box"
-  };
-
-  const container = {
-    minHeight: "100vh",
-    background: "linear-gradient(160deg, #f0f1ff 0%, #fafafa 50%, #f0f4ff 100%)",
-    display: "flex", flexDirection: "column", alignItems: "center",
-    padding: "40px 20px",
-    fontFamily: "'DM Sans', sans-serif"
-  };
-
-  const card = {
-    background: "white", borderRadius: 20, padding: "40px 44px",
-    maxWidth: 640, width: "100%",
-    boxShadow: "0 8px 40px rgba(99,102,241,0.1), 0 1px 8px rgba(0,0,0,0.04)"
-  };
-
-  const label = {
-    display: "block", fontWeight: 700, fontSize: 13, color: "#6366f1",
-    letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10, marginTop: 24
-  };
+  const btnStyle = (disabled) => ({ padding:"14px 32px", borderRadius:10, border:"none", background:disabled?"#dde0ef":"linear-gradient(135deg,#6366f1,#818cf8)", color:disabled?"#a0a3b8":"white", fontFamily:"'DM Sans',sans-serif", fontWeight:700, fontSize:15, cursor:disabled?"not-allowed":"pointer", boxShadow:disabled?"none":"0 4px 16px rgba(99,102,241,0.3)", transition:"all 0.2s" });
+  const inputStyle = { padding:"12px 16px", borderRadius:8, border:"2px solid #e2e4ef", fontFamily:"'DM Sans',sans-serif", fontSize:14, color:"#1a1a2e", background:"white", width:"100%", outline:"none", boxSizing:"border-box" };
+  const container = { minHeight:"100vh", background:"linear-gradient(160deg,#f0f1ff 0%,#fafafa 50%,#f0f4ff 100%)", display:"flex", flexDirection:"column", alignItems:"center", padding:"40px 20px", fontFamily:"'DM Sans',sans-serif" };
+  const card = { background:"white", borderRadius:20, padding:"40px 44px", maxWidth:640, width:"100%", boxShadow:"0 8px 40px rgba(99,102,241,0.1),0 1px 8px rgba(0,0,0,0.04)" };
+  const label = { display:"block", fontWeight:700, fontSize:13, color:"#6366f1", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10, marginTop:24 };
+  const choiceBtn = (active, danger) => ({ padding:"9px 18px", borderRadius:8, border:`2px solid ${active?(danger?"#e55":"#6366f1"):"#e2e4ef"}`, background:active?(danger?"#fee2e2":"linear-gradient(135deg,#6366f1,#818cf8)"):"white", color:active?(danger?"#dc2626":"white"):"#1a1a2e", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.15s" });
 
   if (adminMode) return <AdminView onBack={() => setAdminMode(false)} />;
+
+  const bekendheidComplete = PARTIES.every(p => bekendheid[p]);
 
   return (
     <div style={container}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;600;700&family=DM+Mono:wght@400;700&display=swap" rel="stylesheet" />
 
-      {/* Header */}
-      <div style={{ maxWidth: 640, width: "100%", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ maxWidth:640, width:"100%", marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, color: "#1a1a2e", margin: 0, letterSpacing: "-0.02em" }}>Coalitie Voorkeur Onderzoek</h1>
-          <p style={{ color: "#8b8fa8", margin: "4px 0 0", fontSize: 13 }}>Bachelorthesis · Politieke Besluitvorming</p>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1a1a2e", margin:0, letterSpacing:"-0.02em" }}>Coalitie Voorkeur Onderzoek</h1>
+          <p style={{ color:"#8b8fa8", margin:"4px 0 0", fontSize:13 }}>Bachelorthesis · Kunstmatige Intelligentie</p>
         </div>
-        <button onClick={() => setShowAdminLogin(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, opacity: 0.4 }}>🔒</button>
+        <button onClick={() => setShowAdminLogin(v => !v)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:18, opacity:0.4 }}>🔒</button>
       </div>
 
       {showAdminLogin && (
-        <div style={{ maxWidth: 640, width: "100%", marginBottom: 16, background: "white", borderRadius: 12, padding: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", display: "flex", gap: 10 }}>
-          <input placeholder="Admin wachtwoord" type="password" value={adminInput} onChange={e => setAdminInput(e.target.value)}
-            style={{ ...inputStyle, flex: 1 }} />
-          <button onClick={() => { if (adminInput === "thesis2025") { setAdminMode(true); setShowAdminLogin(false); } else alert("Onjuist wachtwoord"); }}
-            style={{ ...btnStyle(false), padding: "12px 20px", fontSize: 14 }}>Login</button>
+        <div style={{ maxWidth:640, width:"100%", marginBottom:16, background:"white", borderRadius:12, padding:16, boxShadow:"0 4px 16px rgba(0,0,0,0.08)", display:"flex", gap:10 }}>
+          <input placeholder="Admin wachtwoord" type="password" value={adminInput} onChange={e => setAdminInput(e.target.value)} style={{ ...inputStyle, flex:1 }} />
+          <button onClick={() => { if(adminInput==="thesis2025"){setAdminMode(true);setShowAdminLogin(false);}else alert("Onjuist wachtwoord"); }} style={{ ...btnStyle(false), padding:"12px 20px", fontSize:14 }}>Login</button>
         </div>
       )}
 
       <div style={card}>
-        {page < 5 && <ProgressBar step={page} total={4} />}
+        {page < 6 && <ProgressBar step={page} total={5} />}
 
         {/* PAGE 0 — Consent */}
         {page === 0 && (
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#1a1a2e", marginTop: 0 }}>Hallo! 👋</h2>
-            <div style={{ background: "linear-gradient(135deg, #f0f1ff, #f8f0ff)", borderRadius: 14, padding: 24, marginBottom: 24 }}>
-              <p style={{ fontSize: 15, lineHeight: 1.75, color: "#1a1a2e", margin: 0 }}>
-                Bedankt dat je wilt meedoen met dit onderzoek! Voor mijn bachelorthesis doe ik onderzoek naar welke coalitie het meest haalbaar is en waar de meeste mensen blij mee zijn, op basis van individuele voorkeuren en rangschikkingen van politieke partijen. Door deel te nemen verzamel ik data om <strong>verschillende methoden en regels</strong> te testen. Jouw deelname helpt mij enorm!
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Hallo! 👋</h2>
+            <div style={{ background:"linear-gradient(135deg,#f0f1ff,#f8f0ff)", borderRadius:14, padding:24, marginBottom:24 }}>
+              <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:0 }}>
+                Mijn naam is Jade en ik doe voor mijn bachelorthesis <strong>Kunstmatige Intelligentie</strong> onderzoek naar welke coalitie het meest haalbaar is en waar de meeste mensen blij mee zijn, op basis van individuele voorkeuren en rangschikkingen van politieke partijen. Door deel te nemen verzamel ik data om <strong>verschillende methoden en regels</strong> te testen. Jouw deelname helpt mij enorm!
               </p>
-              <p style={{ fontSize: 15, lineHeight: 1.75, color: "#1a1a2e", margin: "12px 0 0" }}>
-                ⏱️ Deelnemen duurt slechts <strong>ongeveer 5 minuten</strong>.
-              </p>
-              <p style={{ fontSize: 15, lineHeight: 1.75, color: "#1a1a2e", margin: "12px 0 0" }}>
-                🔒 <strong>Alle antwoorden blijven volledig anoniem</strong> en worden uitsluitend gebruikt voor mijn bachelorthesis.
-              </p>
+              <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:"12px 0 0" }}>⏱️ Deelnemen duurt slechts <strong>ongeveer 5 minuten</strong>.</p>
+              <p style={{ fontSize:15, lineHeight:1.75, color:"#1a1a2e", margin:"12px 0 0" }}>🔒 <strong>Alle antwoorden blijven volledig anoniem</strong> en worden uitsluitend gebruikt voor mijn bachelorthesis.</p>
             </div>
-
-            <div onClick={() => setConsented(v => !v)} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 20px", borderRadius: 10, border: `2px solid ${consented ? "#6366f1" : "#e2e4ef"}`, background: consented ? "#f0f1ff" : "white", cursor: "pointer", transition: "all 0.2s" }}>
-              <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${consented ? "#6366f1" : "#d0d3e8"}`, background: consented ? "#6366f1" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s" }}>
-                {consented && <span style={{ color: "white", fontSize: 14, fontWeight: 900 }}>✓</span>}
+            <div onClick={() => setConsented(v => !v)} style={{ display:"flex", alignItems:"flex-start", gap:14, padding:"16px 20px", borderRadius:10, border:`2px solid ${consented?"#6366f1":"#e2e4ef"}`, background:consented?"#f0f1ff":"white", cursor:"pointer", transition:"all 0.2s" }}>
+              <div style={{ width:22, height:22, borderRadius:6, border:`2px solid ${consented?"#6366f1":"#d0d3e8"}`, background:consented?"#6366f1":"white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.2s" }}>
+                {consented && <span style={{ color:"white", fontSize:14, fontWeight:900 }}>✓</span>}
               </div>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e", lineHeight: 1.5 }}>
-                Ik ga akkoord met de bovenstaande informatie en geef toestemming voor het anoniem gebruik van mijn antwoorden voor dit onderzoek.
-              </span>
+              <span style={{ fontSize:14, fontWeight:600, color:"#1a1a2e", lineHeight:1.5 }}>Ik ga akkoord met de bovenstaande informatie en geef toestemming voor het anoniem gebruik van mijn antwoorden voor dit onderzoek.</span>
             </div>
-
-            <p style={{ fontSize: 15, color: "#8b8fa8", marginTop: 20, fontStyle: "italic" }}>Alvast heel erg bedankt voor je deelname! 🙏</p>
-
-            <div style={{ marginTop: 24 }}>
+            <p style={{ fontSize:15, color:"#8b8fa8", marginTop:20, fontStyle:"italic" }}>Alvast heel erg bedankt voor je deelname! 🙏</p>
+            <div style={{ marginTop:24 }}>
               <button disabled={!consented} onClick={() => setPage(1)} style={btnStyle(!consented)}>Doorgaan →</button>
             </div>
           </div>
@@ -498,215 +321,153 @@ export default function App() {
         {/* PAGE 1 — Personal */}
         {page === 1 && (
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#1a1a2e", marginTop: 0 }}>Persoonlijke Vragen</h2>
-            <p style={{ color: "#8b8fa8", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>Deel 2 van 4 · Vul de onderstaande vragen in.</p>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Persoonlijke Vragen</h2>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Deel 2 van 5 · Vul de onderstaande vragen in.</p>
 
             <label style={label}>1. Wat is je leeftijd?</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["<18", "18-21", "21-25", "25-30", "30-40", "40+", "Zeg ik liever niet"].map(a => (
-                <button key={a} onClick={() => setLeeftijd(a)} style={{
-                  padding: "9px 18px", borderRadius: 8, border: `2px solid ${leeftijd === a ? "#6366f1" : "#e2e4ef"}`,
-                  background: leeftijd === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
-                  color: leeftijd === a ? "white" : "#1a1a2e", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.15s"
-                }}>{a}</button>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {["18","19","20","21","22","23","24","25","25+","Wil ik niet zeggen"].map(a => (
+                <button key={a} onClick={() => setLeeftijd(a)} style={choiceBtn(leeftijd===a)}>{a}</button>
               ))}
             </div>
 
             <label style={label}>2. Wat is je academische achtergrond?</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {["Middelbare school", "MBO", "HBO", "Bachelor", "Master", "Werkend", "Zeg ik liever niet"].map(a => (
-                <button key={a} onClick={() => setAchtergrond(a)} style={{
-                  padding: "10px 16px", borderRadius: 8, border: `2px solid ${achtergrond === a ? "#6366f1" : "#e2e4ef"}`,
-                  background: achtergrond === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
-                  color: achtergrond === a ? "white" : "#1a1a2e", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.15s", textAlign: "left"
-                }}>{a}</button>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {["Middelbare school","MBO","HBO","Bachelor","Master","Werkend","Wil ik niet zeggen"].map(a => (
+                <button key={a} onClick={() => setAchtergrond(a)} style={{ ...choiceBtn(achtergrond===a), textAlign:"left" }}>{a}</button>
               ))}
             </div>
 
-            <label style={label}>2. Op welke partij heb je bij de laatste landelijke verkiezing gestemd?</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["PVV", "GL-PvdA", "VVD", "NSC", "D66", "BBB", "CDA", "SP", "DENK", "PvdD", "FvD", "SGP", "ChristenUnie", "Volt", "JA21", "BVNL", "BIJ1", "LP", "50PLUS", "Piratenpartij", "FNP", "Vrij Verbond", "DE LINIE", "NL PLAN", "ELLECT", "PvdR", "Vrede voor Dieren", "Ik heb blanco gestemd", "Ik heb niet gestemd", "Zeg ik liever niet", "Anders" ].map(a => (
-                <button key={a} onClick={() => setAchtergrond(a)} style={{
-                  padding: "10px 16px", borderRadius: 8, border: `2px solid ${achtergrond === a ? "#6366f1" : "#e2e4ef"}`,
-                  background: achtergrond === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
-                  color: achtergrond === a ? "white" : "#1a1a2e", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.15s", textAlign: "left"
-                }}>{a}</button>
+            <label style={label}>3. Op welke partij heb je bij de laatste landelijke verkiezing gestemd?</label>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:12 }}>
+              {NL_VOTE_OPTIONS.map(a => (
+                <button key={a} onClick={() => { setGestemdePartij(a); if(a!=="Anders") setGestemdePartijAnders(""); }} style={choiceBtn(gestemdePartij===a)}>{a}</button>
               ))}
             </div>
+            {gestemdePartij === "Anders" && (
+              <input style={inputStyle} placeholder="Namelijk..." value={gestemdePartijAnders} onChange={e => setGestemdePartijAnders(e.target.value)} />
+            )}
 
-            <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
-              <button onClick={() => setPage(0)} style={{ ...btnStyle(false), background: "white", color: "#6366f1", border: "2px solid #6366f1", boxShadow: "none" }}>← Terug</button>
-              <button disabled={!leeftijd || !achtergrond || !gestemdePartij.trim()} onClick={() => setPage(2)} style={btnStyle(!leeftijd || !achtergrond || !gestemdePartij.trim())}>
-                Volgende →
-              </button>
+            <div style={{ display:"flex", gap:12, marginTop:32 }}>
+              <button onClick={() => setPage(0)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={!leeftijd||!achtergrond||!gestemdePartij||(gestemdePartij==="Anders"&&!gestemdePartijAnders.trim())} onClick={() => setPage(2)} style={btnStyle(!leeftijd||!achtergrond||!gestemdePartij||(gestemdePartij==="Anders"&&!gestemdePartijAnders.trim()))}>Volgende →</button>
             </div>
           </div>
         )}
 
-        {/* PAGE 2 — Ranking + Approval */}
+        {/* PAGE 2 — Party familiarity */}
         {page === 2 && (
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#1a1a2e", marginTop: 0 }}>Jouw Voorkeuren</h2>
-            <p style={{ color: "#8b8fa8", fontSize: 14, lineHeight: 1.6, marginBottom: 8 }}>
-              Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Kennis van Partijen</h2>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 3 van 5</p>
+            <p style={{ fontSize:15, lineHeight:1.7, color:"#1a1a2e", marginBottom:24 }}>
+              Voor dit onderzoek gebruik ik de 8 grootste partijen van Nederland. Geef aan welke partijen je kent of van gehoord hebt. Maak je geen zorgen als je een partij niet kent — wees gewoon eerlijk!
             </p>
-
-            <label style={label}>1. Wat is jouw ranking van de gegeven partijen?</label>
-            <p style={{ color: "#8b8fa8", fontSize: 13, marginBottom: 12 }}>Klik op een partij om hem toe te voegen aan jouw ranking. Sleep daarna om de volgorde aan te passen. Je moet alle partijen ranken om verder te gaan.</p>
-            <RankingList ranking={ranking} setRanking={setRanking} pool={pool} setPool={setPool} />
-
-            <label style={{ ...label, marginTop: 36 }}>2. Wat is jouw approval rate van deze partijen?</label>
-            <p style={{ color: "#8b8fa8", fontSize: 13, marginBottom: 20 }}>
-              <strong>−5</strong> = ik zou deze partij echt helemaal niet in de coalitie willen &nbsp;·&nbsp; <strong>0</strong> = neutraal &nbsp;·&nbsp; <strong>+5</strong> = ik zou deze partij heel graag in de coalitie willen
-            </p>
-            <div style={{ marginBottom: 32 }}>
-              {PARTIES.map(p => (
-                <ApprovalSlider key={p} party={p} value={approvals[p]} onChange={v => setApprovals(prev => ({ ...prev, [p]: v }))} />
-              ))}
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {PARTIES.map(party => {
+                const val = bekendheid[party];
+                return (
+                  <div key={party} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px", borderRadius:10, border:"2px solid #e2e4ef", background:"white" }}>
+                    <span style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:15, color:"#1a1a2e" }}>{party}</span>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={() => setBekendheid(b => ({...b,[party]:"ja"}))} style={choiceBtn(val==="ja")}>Ja ✓</button>
+                      <button onClick={() => setBekendheid(b => ({...b,[party]:"nee"}))} style={choiceBtn(val==="nee", true)}>Nee ✗</button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-              <button onClick={() => setPage(1)} style={{ ...btnStyle(false), background: "white", color: "#6366f1", border: "2px solid #6366f1", boxShadow: "none" }}>← Terug</button>
-              <button disabled={ranking.length < PARTIES.length} onClick={() => setPage(3)} style={btnStyle(ranking.length < PARTIES.length)}>Volgende →</button>
+            {Object.values(bekendheid).includes("nee") && (
+              <div style={{ marginTop:16, background:"#fffbeb", border:"2px solid #fbbf24", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#92400e", fontFamily:"'DM Sans',sans-serif" }}>
+                💡 Geen zorgen! De partijen die je niet kent blijven gewoon in de vragenlijst staan, maar jouw antwoord wordt apart genoteerd.
+              </div>
+            )}
+            <div style={{ display:"flex", gap:12, marginTop:28 }}>
+              <button onClick={() => setPage(1)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={!bekendheidComplete} onClick={() => setPage(3)} style={btnStyle(!bekendheidComplete)}>Volgende →</button>
             </div>
           </div>
         )}
 
-        {/* PAGE 3 — Coalition Comparisons */}
+        {/* PAGE 3 — Ranking + Approval */}
         {page === 3 && (
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#1a1a2e", marginTop: 0 }}>Coalitie Vergelijkingen</h2>
-            <p style={{ color: "#8b8fa8", fontSize: 14, lineHeight: 1.6, marginBottom: 8 }}>
-              Op basis van jouw ranking worden de sets hieronder gepersonaliseerd.
-              De nummers (1, 2, 3…) verwijzen naar jouw <strong>{ordinal(0)}, {ordinal(1)}, {ordinal(2)}…</strong> keuze.
-            </p>
-            <div style={{ background: "#f4f5fb", borderRadius: 10, padding: "10px 14px", marginBottom: 24, fontSize: 13, color: "#6366f1", fontFamily: "'DM Mono', monospace" }}>
-              1={r[0]} · 2={r[1]} · 3={r[2]} · 4={r[3]} · 5={r[4]} · 6={r[5]} · 7={r[6]} · 8={r[7]}
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Jouw Voorkeuren</h2>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 4 van 5 · Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.</p>
+
+            <label style={label}>1. Wat is jouw ranking van de gegeven partijen?</label>
+            <p style={{ color:"#8b8fa8", fontSize:13, marginBottom:12 }}>Klik op een partij om hem toe te voegen aan jouw ranking. Sleep daarna om de volgorde aan te passen. Je moet alle partijen ranken om verder te gaan.</p>
+            <RankingList ranking={ranking} setRanking={setRanking} pool={pool} setPool={setPool} />
+
+            <label style={{ ...label, marginTop:36 }}>2. Wat is jouw approval rate van deze partijen?</label>
+            <p style={{ color:"#8b8fa8", fontSize:13, marginBottom:20 }}><strong>−5</strong> = ik zou deze partij echt helemaal niet in de coalitie willen &nbsp;·&nbsp; <strong>0</strong> = neutraal &nbsp;·&nbsp; <strong>+5</strong> = ik zou deze partij heel graag in de coalitie willen</p>
+            <div style={{ marginBottom:32 }}>
+              {PARTIES.map(p => <ApprovalSlider key={p} party={p} value={approvals[p]} onChange={v => setApprovals(prev => ({...prev,[p]:v}))} />)}
             </div>
 
-            <p style={{ fontWeight: 700, fontSize: 15, color: "#1a1a2e", marginBottom: 20 }}>Welke set van partijen heb je liever in de coalitie?</p>
-
-            <CoalitionChoice
-              question={`Vraag 0: {${r[0]}, ${r[1]}} of {${r[2]}, ${r[3]}}?`}
-              optionA={`{${r[0]}, ${r[1]}}`}
-              optionB={`{${r[2]}, ${r[3]}}`}
-              value={coal0} onChange={setCoal0}
-            />
-
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 20, marginTop: 4 }}>
-
-              {/* Q1 */}
-              <CoalitionChoice
-                question={`Vraag 1: {${r[0]}} of {${r[1]}, ${r[2]}, ${r[3]}}?`}
-                optionA={`{${r[0]}}`}
-                optionB={`{${r[1]}, ${r[2]}, ${r[3]}}`}
-                value={coal1} onChange={setCoal1}
-              />
-
-              {/* Q2 — old Q1 */}
-              <CoalitionChoice
-                question={`Vraag 2: {${r[0]}, ${r[1]}, ${r[2]}} of {${r[0]}, ${r[1]}}?`}
-                optionA={`{${r[0]}, ${r[1]}, ${r[2]}}`}
-                optionB={`{${r[0]}, ${r[1]}}`}
-                value={coal2} onChange={setCoal2}
-              />
-
-              {/* Q3 — old Q2 */}
-              <CoalitionChoice
-                question={`Vraag 3: {${r[0]}, ${r[7]}} of {${r[3]}, ${r[4]}}?`}
-                optionA={`{${r[0]}, ${r[7]}}`}
-                optionB={`{${r[3]}, ${r[4]}}`}
-                value={coal3} onChange={setCoal3}
-              />
-
-              {/* Q4 — old Q3 */}
-              <CoalitionChoice
-                question={`Vraag 4: {${r[0]}, ${r[2]}, ${r[7]}} of {${r[2]}, ${r[3]}, ${r[4]}}?`}
-                optionA={`{${r[0]}, ${r[2]}, ${r[7]}}`}
-                optionB={`{${r[2]}, ${r[3]}, ${r[4]}}`}
-                value={coal4} onChange={setCoal4}
-              />
-
-              {/* Q5 — new: {1,3} vs {2,4} */}
-              <CoalitionChoice
-                question={`Vraag 5: {${r[0]}, ${r[2]}} of {${r[1]}, ${r[3]}}?`}
-                optionA={`{${r[0]}, ${r[2]}}`}
-                optionB={`{${r[1]}, ${r[3]}}`}
-                value={coalA} onChange={setCoalA}
-              />
-
-              {/* Q6 — new: {1,3,5} vs {2,4,5} */}
-              <CoalitionChoice
-                question={`Vraag 6: {${r[0]}, ${r[2]}, ${r[4]}} of {${r[1]}, ${r[3]}, ${r[4]}}?`}
-                optionA={`{${r[0]}, ${r[2]}, ${r[4]}}`}
-                optionB={`{${r[1]}, ${r[3]}, ${r[4]}}`}
-                value={coalB} onChange={setCoalB}
-              />
-            </div>
-
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 24, marginTop: 8 }}>
-              <p style={{ fontSize: 14, color: "#8b8fa8", marginBottom: 16 }}>De volgende vragen houden ook rekening met de <strong>invloed van partijen</strong> in de coalitie:</p>
-
-              <CoalitionChoice
-                question={`Vraag 7: {${r[0]} (20%), ${r[2]} (80%)} of {${r[0]} (60%), ${r[5]} (40%)}?`}
-                optionA={`{${r[0]}: 20%, ${r[2]}: 80%}`}
-                optionB={`{${r[0]}: 60%, ${r[5]}: 40%}`}
-                value={coal5} onChange={setCoal5}
-              />
-              <CoalitionChoice
-                question={`Vraag 8: {${r[2]} (50%), ${r[3]} (50%)} of {${r[0]} (50%), ${r[7]} (50%)}?`}
-                optionA={`{${r[2]}: 50%, ${r[3]}: 50%}`}
-                optionB={`{${r[0]}: 50%, ${r[7]}: 50%}`}
-                value={coalC} onChange={setCoalC}
-              />
-            </div>
-
-            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-              <button onClick={() => setPage(2)} style={{ ...btnStyle(false), background: "white", color: "#6366f1", border: "2px solid #6366f1", boxShadow: "none" }}>← Terug</button>
-              <button disabled={!coal0 || !coal1 || !coal2 || !coal3 || !coal4 || !coalA || !coalB || !coal5 || !coalC} onClick={() => setPage(4)} style={btnStyle(!coal0 || !coal1 || !coal2 || !coal3 || !coal4 || !coalA || !coalB || !coal5 || !coalC)}>Volgende →</button>
+            <div style={{ display:"flex", gap:12, marginTop:16 }}>
+              <button onClick={() => setPage(2)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={ranking.length < PARTIES.length} onClick={() => setPage(4)} style={btnStyle(ranking.length < PARTIES.length)}>Volgende →</button>
             </div>
           </div>
         )}
 
-        {/* PAGE 4 — Feedback */}
+        {/* PAGE 4 — Coalition Comparisons */}
         {page === 4 && (
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#1a1a2e", marginTop: 0 }}>Vragen of Feedback?</h2>
-            <p style={{ color: "#8b8fa8", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-              Heb je vragen, opmerkingen of feedback over het onderzoek? Laat het hieronder weten! Dit is volledig optioneel.
-            </p>
-            <textarea
-              value={feedback} onChange={e => setFeedback(e.target.value)}
-              placeholder="Je kunt hier vrij reageren..."
-              style={{ ...inputStyle, minHeight: 140, resize: "vertical", lineHeight: 1.6 }}
-            />
-            <p style={{ fontSize: 14, color: "#8b8fa8", marginTop: 20, lineHeight: 1.7 }}>
-              Hartelijk dank voor het invullen van deze vragenlijst! 🎉
-            </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-              <button onClick={() => setPage(3)} style={{ ...btnStyle(false), background: "white", color: "#6366f1", border: "2px solid #6366f1", boxShadow: "none" }}>← Terug</button>
-              <button onClick={handleSubmit} disabled={saving} style={btnStyle(saving)}>{saving ? "Opslaan..." : "Verstuur antwoorden 🚀"}</button>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Coalitie Vergelijkingen</h2>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Op basis van jouw ranking worden de sets hieronder gepersonaliseerd. De nummers (1, 2, 3…) verwijzen naar jouw <strong>{ordinal(0)}, {ordinal(1)}, {ordinal(2)}…</strong> keuze.</p>
+            <div style={{ background:"#f4f5fb", borderRadius:10, padding:"10px 14px", marginBottom:24, fontSize:13, color:"#6366f1", fontFamily:"'DM Mono',monospace" }}>
+              1={r[0]} · 2={r[1]} · 3={r[2]} · 4={r[3]} · 5={r[4]} · 6={r[5]} · 7={r[6]} · 8={r[7]}
+            </div>
+            <p style={{ fontWeight:700, fontSize:15, color:"#1a1a2e", marginBottom:20 }}>Welke set van partijen heb je liever in de coalitie?</p>
+
+            <CoalitionChoice question={`Vraag 0: {${r[0]}, ${r[1]}} of {${r[2]}, ${r[3]}}?`} optionA={`{${r[0]}, ${r[1]}}`} optionB={`{${r[2]}, ${r[3]}}`} value={coal0} onChange={setCoal0} />
+            <div style={{ borderTop:"1px solid #eee", paddingTop:20, marginTop:4 }}>
+              <CoalitionChoice question={`Vraag 1: {${r[0]}} of {${r[1]}, ${r[2]}, ${r[3]}}?`} optionA={`{${r[0]}}`} optionB={`{${r[1]}, ${r[2]}, ${r[3]}}`} value={coal1} onChange={setCoal1} />
+              <CoalitionChoice question={`Vraag 2: {${r[0]}, ${r[1]}, ${r[2]}} of {${r[0]}, ${r[1]}}?`} optionA={`{${r[0]}, ${r[1]}, ${r[2]}}`} optionB={`{${r[0]}, ${r[1]}}`} value={coal2} onChange={setCoal2} />
+              <CoalitionChoice question={`Vraag 3: {${r[0]}, ${r[2]}} of {${r[1]}}?`} optionA={`{${r[0]}, ${r[2]}}`} optionB={`{${r[1]}}`} value={coalA} onChange={setCoalA} />
+              <CoalitionChoice question={`Vraag 4: {${r[0]}, ${r[7]}} of {${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[7]}}`} optionB={`{${r[3]}, ${r[4]}}`} value={coal3} onChange={setCoal3} />
+              <CoalitionChoice question={`Vraag 5: {${r[0]}, ${r[2]}, ${r[7]}} of {${r[2]}, ${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[2]}, ${r[7]}}`} optionB={`{${r[2]}, ${r[3]}, ${r[4]}}`} value={coal4} onChange={setCoal4} />
+              <CoalitionChoice question={`Vraag 6: {${r[0]}, ${r[2]}, ${r[4]}} of {${r[1]}, ${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[2]}, ${r[4]}}`} optionB={`{${r[1]}, ${r[3]}, ${r[4]}}`} value={coalB} onChange={setCoalB} />
+            </div>
+            <div style={{ borderTop:"1px solid #eee", paddingTop:24, marginTop:8 }}>
+              <p style={{ fontSize:14, color:"#8b8fa8", marginBottom:16 }}>De volgende vragen houden ook rekening met de <strong>invloed van partijen</strong> in de coalitie:</p>
+              <CoalitionChoice question={`Vraag 7: {${r[0]} (20%), ${r[2]} (80%)} of {${r[0]} (60%), ${r[5]} (40%)}?`} optionA={`{${r[0]}: 20%, ${r[2]}: 80%}`} optionB={`{${r[0]}: 60%, ${r[5]}: 40%}`} value={coal5} onChange={setCoal5} />
+              <CoalitionChoice question={`Vraag 8: {${r[2]} (50%), ${r[3]} (50%)} of {${r[0]} (50%), ${r[7]} (50%)}?`} optionA={`{${r[2]}: 50%, ${r[3]}: 50%}`} optionB={`{${r[0]}: 50%, ${r[7]}: 50%}`} value={coalC} onChange={setCoalC} />
+            </div>
+            <div style={{ display:"flex", gap:12, marginTop:24 }}>
+              <button onClick={() => setPage(3)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC} onClick={() => setPage(5)} style={btnStyle(!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC)}>Volgende →</button>
             </div>
           </div>
         )}
 
-        {/* PAGE 5 — Done */}
+        {/* PAGE 5 — Feedback */}
         {page === 5 && (
-          <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>🎓</div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, color: "#1a1a2e" }}>Bedankt!</h2>
-            <p style={{ color: "#8b8fa8", fontSize: 15, lineHeight: 1.75 }}>
-              Je antwoorden zijn anoniem opgeslagen en zullen worden gebruikt voor mijn bachelorthesis.<br /><br />
-              Dank je wel voor je waardevolle deelname! 🙏
-            </p>
-            <div style={{ marginTop: 24, padding: "16px 20px", background: "#f0f1ff", borderRadius: 10, fontSize: 14, color: "#6366f1", fontWeight: 600 }}>
-              Je kunt dit tabblad nu sluiten.
+          <div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Vragen of Feedback?</h2>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Heb je vragen, opmerkingen of feedback over het onderzoek? Laat het hieronder weten! Dit is volledig optioneel.</p>
+            <textarea value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Je kunt hier vrij reageren..." style={{ ...inputStyle, minHeight:140, resize:"vertical", lineHeight:1.6 }} />
+            <p style={{ fontSize:14, color:"#8b8fa8", marginTop:20 }}>Hartelijk dank voor het invullen van deze vragenlijst! 🎉</p>
+            <div style={{ display:"flex", gap:12, marginTop:24 }}>
+              <button onClick={() => setPage(4)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button onClick={handleSubmit} disabled={saving} style={btnStyle(saving)}>{saving?"Opslaan...":"Verstuur antwoorden 🚀"}</button>
             </div>
+          </div>
+        )}
+
+        {/* PAGE 6 — Done */}
+        {page === 6 && (
+          <div style={{ textAlign:"center", padding:"20px 0" }}>
+            <div style={{ fontSize:56, marginBottom:16 }}>🎓</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1a1a2e" }}>Bedankt!</h2>
+            <p style={{ color:"#8b8fa8", fontSize:15, lineHeight:1.75 }}>Je antwoorden zijn anoniem opgeslagen en zullen worden gebruikt voor mijn bachelorthesis over coalitiehaalbaarheid.<br /><br />Dank je wel voor je waardevolle deelname! 🙏</p>
+            <div style={{ marginTop:24, padding:"16px 20px", background:"#f0f1ff", borderRadius:10, fontSize:14, color:"#6366f1", fontWeight:600 }}>Je kunt dit tabblad nu sluiten.</div>
           </div>
         )}
       </div>
-
-      <p style={{ marginTop: 20, fontSize: 12, color: "#c0c3d8" }}>Bachelorthesis Onderzoek · Alle data wordt anoniem verwerkt</p>
+      <p style={{ marginTop:20, fontSize:12, color:"#c0c3d8" }}>Bachelorthesis Onderzoek · Alle data wordt anoniem verwerkt</p>
     </div>
   );
 }
