@@ -327,7 +327,7 @@ export default function App() {
         {page === 1 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Persoonlijke Vragen</h2>
-            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Deel 2 van 5 · Vul de onderstaande vragen in.</p>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Deel 1 van 4 · Vul de onderstaande vragen in.</p>
 
             <label style={label}>1. Wat is je leeftijd?</label>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
@@ -365,7 +365,7 @@ export default function App() {
         {page === 2 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Jouw Voorkeuren</h2>
-            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 4 van 5 · Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.</p>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 2 van 4 · Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.</p>
 
             <label style={label}>1. Wat is jouw ranking van de gegeven partijen?</label>
             <p style={{ color:"#8b8fa8", fontSize:13, marginBottom:12 }}>Klik op een partij om hem toe te voegen aan jouw ranking. Sleep daarna om de volgorde aan te passen. Je moet alle partijen ranken om verder te gaan.</p>
