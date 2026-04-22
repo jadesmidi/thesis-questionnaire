@@ -18,7 +18,7 @@ function buildCoalitionLabel(indices, ranking) {
 
 // ─── Storage helpers ─────────────────────────────────────────────────────────
 
-const SHEET_URL = "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec";
 
 async function saveResponse(data) {
   await fetch(SHEET_URL, {
