@@ -429,7 +429,7 @@ export default function App() {
               <CoalitionChoice question={`Vraag 3: {${r[0]}, ${r[2]}} of {${r[1]}}?`} optionA={`{${r[0]}, ${r[2]}}`} optionB={`{${r[1]}}`} value={coalA} onChange={setCoalA} />
               <CoalitionChoice question={`Vraag 4: {${r[0]}, ${r[7]}} of {${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[7]}}`} optionB={`{${r[3]}, ${r[4]}}`} value={coal3} onChange={setCoal3} />
               <CoalitionChoice question={`Vraag 5: {${r[0]}, ${r[2]}, ${r[7]}} of {${r[2]}, ${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[2]}, ${r[7]}}`} optionB={`{${r[2]}, ${r[3]}, ${r[4]}}`} value={coal4} onChange={setCoal4} />
-              <CoalitionChoice question={`Vraag 6: {${r[0]}, ${r[2]}, ${r[4]}} of {${r[1]}, ${r[3]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[2]}, ${r[4]}}`} optionB={`{${r[1]}, ${r[3]}, ${r[4]}}`} value={coalB} onChange={setCoalB} />
+              <CoalitionChoice question={`Vraag 6: {${r[0]}, ${r[2]}, ${r[4]}} of {${r[1]}, ${r[4]}}?`} optionA={`{${r[0]}, ${r[2]}, ${r[4]}}`} optionB={`{${r[1]}, ${r[4]}}`} value={coalB} onChange={setCoalB} />
             </div>
             <div style={{ borderTop:"1px solid #eee", paddingTop:24, marginTop:8 }}>
               <p style={{ fontSize:14, color:"#8b8fa8", marginBottom:16 }}>De volgende vragen houden ook rekening met de <strong>invloed van partijen</strong> in de coalitie:</p>
