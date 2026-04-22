@@ -18,12 +18,16 @@ function buildCoalitionLabel(indices, ranking) {
 
 // ─── Storage helpers ─────────────────────────────────────────────────────────
 
-async function saveResponse(data) {
-  const existing = await loadResponses();
-  existing.push({ ...data, id: Date.now(), submittedAt: new Date().toISOString() });
-  await window.storage.set(STORAGE_KEY, JSON.stringify(existing), true);
-}
+const SHEET_URL = "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycby86kSrPfdn3_pfhqFvIuV-ldOjXKvhARNfuW5f_VQv2tLJWPFjHB0KJKy5xwFAgwWX/exec/exec";
 
+async function saveResponse(data) {
+  await fetch(SHEET_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
 async function loadResponses() {
   try {
     const r = await window.storage.get(STORAGE_KEY, true);
