@@ -378,8 +378,8 @@ export default function App() {
             </div>
 
             <div style={{ display:"flex", gap:12, marginTop:16 }}>
-              <button onClick={() => setPage(2)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
-              <button disabled={ranking.length < PARTIES.length} onClick={() => setPage(4)} style={btnStyle(ranking.length < PARTIES.length)}>Volgende →</button>
+              <button onClick={() => setPage(1)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={ranking.length < PARTIES.length} onClick={() => setPage(3)} style={btnStyle(ranking.length < PARTIES.length)}>Volgende →</button>
             </div>
           </div>
         )}
@@ -409,8 +409,8 @@ export default function App() {
               <CoalitionChoice question={`Vraag 8: {${r[2]} (50%), ${r[3]} (50%)} of {${r[0]} (50%), ${r[7]} (50%)}?`} optionA={`{${r[2]}: 50%, ${r[3]}: 50%}`} optionB={`{${r[0]}: 50%, ${r[7]}: 50%}`} value={coalC} onChange={setCoalC} />
             </div>
             <div style={{ display:"flex", gap:12, marginTop:24 }}>
-              <button onClick={() => setPage(3)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
-              <button disabled={!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC} onClick={() => setPage(5)} style={btnStyle(!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC)}>Volgende →</button>
+              <button onClick={() => setPage(2)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button disabled={!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC} onClick={() => setPage(4)} style={btnStyle(!coal0||!coal1||!coal2||!coal3||!coal4||!coalA||!coalB||!coal5||!coalC)}>Volgende →</button>
             </div>
           </div>
         )}
@@ -423,7 +423,7 @@ export default function App() {
             <textarea value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Je kunt hier vrij reageren..." style={{ ...inputStyle, minHeight:140, resize:"vertical", lineHeight:1.6 }} />
             <p style={{ fontSize:14, color:"#8b8fa8", marginTop:20 }}>Hartelijk dank voor het invullen van deze vragenlijst! 🎉</p>
             <div style={{ display:"flex", gap:12, marginTop:24 }}>
-              <button onClick={() => setPage(4)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
+              <button onClick={() => setPage(3)} style={{ ...btnStyle(false), background:"white", color:"#6366f1", border:"2px solid #6366f1", boxShadow:"none" }}>← Terug</button>
               <button onClick={handleSubmit} disabled={saving} style={btnStyle(saving)}>{saving?"Opslaan...":"Verstuur antwoorden 🚀"}</button>
             </div>
           </div>
