@@ -524,8 +524,8 @@ export default function App() {
             </div>
 
             <label style={label}>2. Op welke partij heb je bij de laatste landelijke verkiezing gestemd?</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {["PVV", "GL=PvdA", "VVD", "NSC", "D66", "BBB", "CDA", "SP", "DENK", "PvdD", "FvD", "SGP", "ChristenUnie", "Volt", "JA21", "BVNL", "BIJ1", "LP", "50PLUS", "Piratenpartij", "FNP", "Vrij Verbond", "DE LINIE", "NL PLAN", "ELLECT", "PvdR", "Vrede voor Dieren", "Ik heb blanco gestemd", "Ik heb niet gestemd", "Zeg ik liever niet", "Anders" ].map(a => (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {["PVV", "GL-PvdA", "VVD", "NSC", "D66", "BBB", "CDA", "SP", "DENK", "PvdD", "FvD", "SGP", "ChristenUnie", "Volt", "JA21", "BVNL", "BIJ1", "LP", "50PLUS", "Piratenpartij", "FNP", "Vrij Verbond", "DE LINIE", "NL PLAN", "ELLECT", "PvdR", "Vrede voor Dieren", "Ik heb blanco gestemd", "Ik heb niet gestemd", "Zeg ik liever niet", "Anders" ].map(a => (
                 <button key={a} onClick={() => setAchtergrond(a)} style={{
                   padding: "10px 16px", borderRadius: 8, border: `2px solid ${achtergrond === a ? "#6366f1" : "#e2e4ef"}`,
                   background: achtergrond === a ? "linear-gradient(135deg, #6366f1, #818cf8)" : "white",
