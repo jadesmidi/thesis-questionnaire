@@ -581,7 +581,7 @@ export default function App() {
           <div style={{ textAlign:"center", padding:"20px 0" }}>
             <div style={{ fontSize:56, marginBottom:16 }}>🎓</div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1a1a2e" }}>Bedankt!</h2>
-            <p style={{ color:"#8b8fa8", fontSize:15, lineHeight:1.75 }}>Je antwoorden zijn anoniem opgeslagen en zullen worden gebruikt voor mijn bachelorthesis over coalitiehaalbaarheid.<br /><br />Dank je wel voor je waardevolle deelname! 🙏</p>
+            <p style={{ color:"#8b8fa8", fontSize:15, lineHeight:1.75 }}>Je antwoorden zijn anoniem opgeslagen en zullen worden gebruikt voor mijn bachelor scriptie over coalitie voorkeuren.<br /><br />Voel je vrij dit te delen met vrienden, familie en collega's! Dank je wel voor je waardevolle deelname 🙏</p>
             <div style={{ marginTop:24, padding:"16px 20px", background:"#f0f1ff", borderRadius:10, fontSize:14, color:"#6366f1", fontWeight:600 }}>Je kunt dit tabblad nu sluiten.</div>
           </div>
         )}
