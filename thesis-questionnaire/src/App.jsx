@@ -9,7 +9,7 @@ function ordinal(n) {
   return s[n] || `${n+1}e`;
 }
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbyeF0-WyNnI54LXdspP2m0imffhtCZ7gPsgVrVBJTCwgLd7RzDPkF7-2T1AZwEStNo0/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbwZV3-fRPVCdf0InaetYgfMniWzrgXU7C1-fJznkMYhrg8HcBNBxwSg_Qy9Vd0Y4UJV/exec";
 
 async function saveResponse(data) {
   try {
