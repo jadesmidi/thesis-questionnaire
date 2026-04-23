@@ -263,7 +263,7 @@ export default function App() {
     setSaving(true);
     await saveResponse({ leeftijd, achtergrond, gestemdePartij, gestemdePartijAnders, stemToelichting, bekendheid, ranking, approvals, coal_attention:coal0, coal_1:coal1, coal_2:coal2, coal_3:coal3, coal_4:coal4, coal_A:coalA, coal_B:coalB, coal_5:coal5, coal_C:coalC, feedback });
     setSaving(false);
-    setPage(6);
+    setPage(5);
   };
 
   const btnStyle = (disabled) => ({ padding:"14px 32px", borderRadius:10, border:"none", background:disabled?"#dde0ef":"linear-gradient(135deg,#6366f1,#818cf8)", color:disabled?"#a0a3b8":"white", fontFamily:"'DM Sans',sans-serif", fontWeight:700, fontSize:15, cursor:disabled?"not-allowed":"pointer", boxShadow:disabled?"none":"0 4px 16px rgba(99,102,241,0.3)", transition:"all 0.2s" });
