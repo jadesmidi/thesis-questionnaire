@@ -9,7 +9,7 @@ function ordinal(n) {
   return s[n] || `${n+1}e`;
 }
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzseAhQxYvrhGdS4L-QNzFBbJZQgqNEK8VIRI-onzQ0dYV8LYrn8Tqg41uH9OwfeodR/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbwZV3-fRPVCdf0InaetYgfMniWzrgXU7C1-fJznkMYhrg8HcBNBxwSg_Qy9Vd0Y4UJV/exec";
 
 async function saveResponse(data) {
   try {
@@ -487,7 +487,7 @@ export default function App() {
         {page === 2 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Jouw Voorkeuren</h2>
-            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 2 van 4 · Voor dit experiment heb ik de <strong>8 grootste partijen van Nederland</strong> geselecteerd.</p>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Deel 2 van 4 · Voor dit experiment heb ik <strong>8 grote partijen van Nederland</strong> geselecteerd.</p>
 
             <label style={label}>1. Wat is jouw ranking van de gegeven partijen?</label>
             <p style={{ color:"#8b8fa8", fontSize:13, marginBottom:12 }}>Klik op een partij om hem toe te voegen aan jouw ranking. Sleep daarna om de volgorde aan te passen. Je moet alle partijen ranken om verder te gaan.</p>
@@ -510,7 +510,7 @@ export default function App() {
         {page === 3 && (
           <div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1a1a2e", marginTop:0 }}>Coalitie Vergelijkingen</h2>
-            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Op basis van jouw ranking worden de sets hieronder gepersonaliseerd. De nummers (1, 2, 3…) verwijzen naar jouw <strong>{ordinal(0)}, {ordinal(1)}, {ordinal(2)}…</strong> keuze.</p>
+            <p style={{ color:"#8b8fa8", fontSize:14, lineHeight:1.6, marginBottom:8 }}>Hier is een herinnering aan jouw ranking:</p>
             <div style={{ background:"#f4f5fb", borderRadius:10, padding:"10px 14px", marginBottom:24, fontSize:13, color:"#6366f1", fontFamily:"'DM Mono',monospace" }}>
               1={r[0]} · 2={r[1]} · 3={r[2]} · 4={r[3]} · 5={r[4]} · 6={r[5]} · 7={r[6]} · 8={r[7]}
             </div>
@@ -533,20 +533,6 @@ export default function App() {
 
             {c && (
               <div style={{ borderTop:"1px solid #eee", paddingTop:24, marginTop:8 }}>
-                <p style={{ fontSize:14, color:"#8b8fa8", marginBottom:8 }}>
-                  De volgende vraag gebruikt een gepersonaliseerde variabele <strong style={{ fontFamily:"'DM Mono',monospace", color:"#6366f1" }}>c</strong> — de partij die je het minst afkeurt onder de partijen met een negatieve score.
-                </p>
-                <div style={{ background:"#f4f5fb", borderRadius:10, padding:"10px 14px", marginBottom:20, fontSize:13, color:"#6366f1", fontFamily:"'DM Mono',monospace" }}>
-                  c = {c} (approval: {approvals[c] > 0 ? `+${approvals[c]}` : approvals[c]})
-                  {PARTIES.filter(p => approvals[p] < 0).length === 0 && (
-                    <span style={{ color:"#f59e0b" }}> — geen negatieve partijen, gebruik van laagst gerankte partij</span>
-                  )}
-                </div>
-                {(c === r[0] || c === r[1] || c === r[2]) && (
-                  <div style={{ background:"#fffbeb", border:"2px solid #fbbf24", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#92400e", fontFamily:"'DM Sans',sans-serif", marginBottom:16 }}>
-                    ⚠️ Let op: voor jou valt c samen met een partij die al in deze vraag voorkomt. Je antwoord wordt genoteerd maar uitgesloten van de bijbehorende analyse.
-                  </div>
-                )}
                 <CoalitionChoice
                   question={`Vraag 9: {${r[0]}: 70%, ${c}: 30%} of {${r[1]}: 50%, ${r[2]}: 50%}?`}
                   optionA={`{${r[0]}: 70%, ${c}: 30%}`}
